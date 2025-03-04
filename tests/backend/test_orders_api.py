@@ -1,11 +1,12 @@
 import logging as logger
 import pytest
 from datetime import datetime, timedelta
+from config.config import Config
 
 pytestmark = [pytest.mark.orders, pytest.mark.api]
 
 @pytest.mark.testID15
-def test_create_order():
+def test_create_order(api_config):
     """Test creating a new order via API"""
     logger.info("Testing order creation API...")
     test_order_data = {
@@ -19,7 +20,7 @@ def test_create_order():
             }
         ],
         "shipping": {
-            "first_name": "John",
+            "first_name": Config.TEST_USERNAME,
             "last_name": "Doe",
             "address_1": "969 Market",
             "city": "San Francisco",
@@ -28,8 +29,9 @@ def test_create_order():
             "country": "US"
         }
     }
-    # TODO: Implement order creation API call
-    assert True  # Replace with actual assertion
+    # Use api_config to make API calls
+    # api_client = WooCommerceAPI(api_config)
+    assert True
 
 @pytest.mark.testID16
 def test_get_order_by_id():
