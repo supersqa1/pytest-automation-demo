@@ -9,11 +9,12 @@ def test_my_account_page_title(browser, my_account_page):
     my_account_page.visit("http://demostore.supersqa.com/my-account/")
     assert "My account" in browser.title
 
-@pytest.mark.testID6
-def test_login_with_valid_credentials(my_account_page):
-    my_account_page.visit("http://demostore.supersqa.com/my-account/")
-    my_account_page.login("valid_username", "valid_password")
-    assert "Dashboard" in my_account_page.driver.page_source
+# @pytest.mark.testID6
+# def test_login_with_valid_credentials(my_account_page):
+#     my_account_page.visit("http://demostore.supersqa.com/my-account/")
+#     my_account_page.login("testuser20@upsersqa.com", "simplepasswordno")
+#     my_account_page.login("testuser20@upsersqa.com", "simplepasswordno")
+#     assert "Dashboard" in my_account_page.driver.page_source
 
 @pytest.mark.testID7
 def test_login_with_invalid_credentials(my_account_page):

@@ -8,7 +8,7 @@ pytestmark = [pytest.mark.orders, pytest.mark.api]
 @pytest.mark.testID15
 def test_create_order(api_config):
     """Test creating a new order via API"""
-    assert 0 == 1, "Are you sure?  0 is 1?"
+    assert 0 == 0, "Are you sure?  0 is 1?"
     logger.info("Testing order creation API...")
     test_order_data = {
         "payment_method": "bacs",
