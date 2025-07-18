@@ -47,3 +47,43 @@ def home_page(browser):
 @pytest.fixture(scope="module")
 def my_account_page(browser):
     return MyAccountPage(browser)
+
+# conftest.py
+
+def pytest_addoption(parser):
+    """
+    Adds the --tcid command-line option for specifying a test case ID.
+    """
+    parser.addoption(
+        "--tcid", action="store", default=None, help="Run test by a specific test case ID."
+    )
+
+def pytest_collection_modifyitems(config, items):
+    """
+    Deselects tests that do not match the --tcid option.
+    """
+    tcid_to_run = config.getoption("--tcid")
+
+    # If the --tcid option is not provided, do nothing.
+    if not tcid_to_run:
+        return
+
+    selected_items = []
+    deselected_items = []
+
+    for item in items:
+        # Check if the test item has the 'tcid' marker
+        tcid_marker = item.get_closest_marker("tcid")
+        if tcid_marker:
+            # Get the ID from the marker's argument
+            test_case_id = tcid_marker.args[0]
+            # If the test's ID matches the one we want to run, keep it.
+            if test_case_id == tcid_to_run:
+                selected_items.append(item)
+                continue
+        
+        # If the test doesn't have the marker or the ID doesn't match, deselect it.
+        deselected_items.append(item)
+    
+    # Update the list of items to run with only our selected tests.
+    items[:] = selected_items

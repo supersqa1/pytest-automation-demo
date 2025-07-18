@@ -1,23 +1,26 @@
 
 import pytest
 import time
-
+import sys
 pytestmark = [pytest.mark.home_page, pytest.mark.regression] 
 
 @pytest.mark.testID1
+@pytest.mark.tcid('HOME-1')
 @pytest.mark.smoke
 def test_home_page_title(browser, home_page):
     home_page.visit("http://demostore.supersqa.com")
     assert 'Demo eCom Store – Just another WordPress site' == browser.title
 
 @pytest.mark.testID2
+@pytest.mark.tcid('HOME-2')
 def test_navigation_to_my_account(home_page):
     home_page.visit("http://demostore.supersqa.com")
     home_page.go_to_my_account()
     assert "My account" in home_page.driver.title
 
 @pytest.mark.testID3
-@pytest.mark.smoke
+@pytest.mark.tcid('HOME-3')
+# @pytest.mark.smoke
 def test_search_product(home_page):
     home_page.visit("http://demostore.supersqa.com")
     home_page.search_product("T-shirt")
