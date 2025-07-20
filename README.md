@@ -11,6 +11,22 @@ This framework demonstrates:
 - Environment configuration management
 - Advanced test reporting
 
+## Table of Contents
+
+- [Project Structure](#project-structure)
+- [Setup](#setup)
+- [Running Tests](#running-tests)
+- [Markers for Organization and Selection](#markers-for-organization-and-selection)
+- [Mastering Fixtures for Setup and Teardown](#mastering-fixtures-for-setup-and-teardown)
+- [Data-Driven Testing with @parametrize](#data-driven-testing-with-parametrize)
+- [Speeding Up Test Runs with Parallel Execution](#speeding-up-test-runs-with-parallel-execution)
+- [Generating Rich Test Reports with Allure](#generating-rich-test-reports-with-allure)
+- [Test Categories](#test-categories)
+- [Configuration](#configuration)
+- [Test Reports](#test-reports)
+- [Best Practices](#best-practices)
+- [Support](#support)
+
 ## Project Structure
 ```
     pytest-automation-demo/
@@ -228,6 +244,354 @@ pytest --cache-clear
 
 # Run only specific directories to speed up discovery
 pytest tests/frontend/ --cache-clear
+```
+
+## Markers for Organization and Selection
+
+PyTest markers allow you to categorize, organize, and selectively run tests based on their characteristics or metadata.
+
+### Built-in Markers
+
+**Skip tests unconditionally:**
+```python
+@pytest.mark.skip(reason="Feature not implemented yet")
+def test_future_feature():
+    pass
+```
+
+**Skip tests conditionally:**
+```python
+import sys
+
+@pytest.mark.skipif(sys.version_info > (3, 7), reason="Requires Python 3.8+")
+def test_python_version_dependent():
+    pass
+```
+
+**Mark tests as expected to fail:**
+```python
+@pytest.mark.xfail(reason="Known bug in API")
+def test_broken_api():
+    # This test is expected to fail
+    response = api_call()
+    assert response.status_code == 200
+```
+
+### Custom Markers
+
+**Create your own markers for test categorization:**
+```python
+@pytest.mark.smoke
+def test_login_functionality():
+    pass
+
+@pytest.mark.regression
+def test_complex_workflow():
+    pass
+
+@pytest.mark.slow
+def test_performance_heavy():
+    pass
+```
+
+**Run tests by marker:**
+```bash
+pytest -m smoke
+pytest -m "not slow"
+pytest -m "smoke or regression"
+```
+
+**Note:** If you see `PytestUnknownMarkWarning`, you need to register your markers in `pytest.ini`:
+```ini
+[pytest]
+markers =
+    smoke: marks tests as smoke tests
+    regression: marks tests as regression tests
+    slow: marks tests as slow running
+```
+
+### Markers with Arguments (for Metadata)
+
+**Add metadata to tests using marker arguments:**
+```python
+@pytest.mark.tcid('TCID-123')
+def test_user_registration():
+    pass
+
+@pytest.mark.tcid('TCID-456')
+def test_user_login():
+    pass
+
+@pytest.mark.priority('high')
+def test_critical_feature():
+    pass
+```
+
+**Register markers with arguments in `pytest.ini`:**
+```ini
+[pytest]
+markers =
+    tcid: test case identifier
+    priority: test priority level
+```
+
+### Running Tests by Marker Argument
+
+**Run tests based on marker argument values:**
+```bash
+pytest --tcid TCID-123
+pytest --tcid TCID-456
+```
+
+**Note:** The `--tcid` flag implementation is available in the `conftest.py` file. This allows you to run specific tests by their Test Case ID.
+
+## Mastering Fixtures for Setup and Teardown
+
+Fixtures are a powerful PyTest feature used to provide a fixed baseline for tests. They are primarily used for setup and teardown code to reduce duplication, following the **DRY (Don't Repeat Yourself)** principle. Fixtures help you create reusable test components that can be shared across multiple tests.
+
+### The Anatomy of a Fixture (`yield`)
+
+Modern fixtures use `yield` to separate setup from teardown. Code before `yield` is the setup part, and code after `yield` is the teardown part.
+
+**Example:** See `tests/fixture_examples/test_basic_fixture_yield.py` for a complete demonstration.
+
+```python
+@pytest.fixture
+def setup_and_teardown():
+    print("--- SETUP: This runs before the test ---")
+    yield  # Test runs here
+    print("--- TEARDOWN: This runs after the test ---")
+```
+
+### Two Ways to Use a Fixture
+
+#### 1. For Actions Only (`@pytest.mark.usefixtures`)
+
+Use this when the test only needs the fixture's setup/teardown actions and does not need a return value.
+
+```python
+@pytest.mark.usefixtures("setup_and_teardown")
+def test_example():
+    # Test code here
+    assert True
+```
+
+#### 2. To Provide Data (Passing as an Argument)
+
+Use this when the test needs to access the object or data returned by the fixture.
+
+**Example:** See `tests/fixture_examples/test_return_value_fixture.py` for a complete demonstration.
+
+```python
+@pytest.fixture
+def user_credentials():
+    credentials = {"username": "test_user", "password": "test_pass"}
+    yield credentials
+    # Cleanup code here
+
+def test_login(user_credentials):
+    # Access the returned data
+    assert user_credentials["username"] == "test_user"
+```
+
+### Returning Multiple Items
+
+For returning multiple values, using a **dictionary** is a recommended best practice for readability, as shown in the `test_return_value_fixture.py` example.
+
+```python
+@pytest.fixture
+def test_data():
+    data = {
+        "user": "test_user",
+        "email": "test@example.com",
+        "role": "admin"
+    }
+    yield data
+```
+
+### Fixture Scope (The Key to Efficiency)
+
+The `scope` parameter controls how often a fixture is created and destroyed. Using the right scope is crucial for performance.
+
+**Common Scopes:**
+
+- **`scope='function'`** (default): Runs once per test function
+- **`scope='class'`**: Runs once per test class
+- **`scope='session'`**: Runs once for the entire test session
+
+**Example:** See `tests/fixture_examples/test_scope_fixture.py` for a complete demonstration.
+
+```python
+@pytest.fixture(scope="session")
+def browser():
+    # Expensive setup - only done once
+    driver = webdriver.Chrome()
+    yield driver
+    driver.quit()
+
+@pytest.fixture(scope="function")
+def test_data():
+    # Lightweight setup - done for each test
+    data = {"id": random.randint(1, 1000)}
+    yield data
+```
+
+**Performance Tip:** Use `session` scope for expensive resources like browsers, databases, or API connections.
+
+### The Magic of `conftest.py`
+
+`conftest.py` is a special file where shared fixtures are placed. Any fixture defined in `conftest.py` is automatically available to all tests in that directory and its subdirectories, with no imports needed.
+
+**Benefits:**
+- **No imports required** - fixtures are automatically discovered
+- **Shared across directories** - place in parent directory to share with subdirectories
+- **Clean organization** - keeps fixtures separate from test logic
+
+**Example structure:**
+```
+tests/
+├── conftest.py          # Shared fixtures for all tests
+├── frontend/
+│   ├── conftest.py      # Frontend-specific fixtures
+│   └── test_home.py
+└── backend/
+    ├── conftest.py      # Backend-specific fixtures
+    └── test_api.py
+```
+
+## Data-Driven Testing with @parametrize
+
+PyTest allows you to run a single test function with multiple sets of data using the `@pytest.mark.parametrize` decorator. This is a powerful feature for reducing code duplication and thoroughly testing your logic.
+
+For detailed, commented examples covering basic usage, readable test IDs, and combining with other markers, please see the files inside the `tests/parametrize_examples/` directory.
+
+## Speeding Up Test Runs with Parallel Execution
+
+As a test suite grows, execution time can become a major bottleneck. The `pytest-xdist` plugin allows you to run your tests in parallel across multiple CPU cores to dramatically reduce this time.
+
+**Installation:**
+```bash
+pip install pytest-xdist
+```
+
+**Basic Usage:**
+The most common way to use it is with the `-n` flag, which specifies the number of parallel worker processes.
+
+```bash
+# Automatically use one worker per available CPU core
+pytest -n auto
+
+# Specify exact number of workers
+pytest -n 4
+
+# Use a conservative number of workers (useful for resource-intensive tests)
+pytest -n 2
+```
+
+**Important Considerations:**
+
+- **Test Independence:** Parallel execution only works correctly if your tests are completely independent and do not rely on the state or outcome of other tests.
+
+- **Fixture Scope:** A session-scoped fixture (`@pytest.fixture(scope="session")`) will be created once per worker process, not once for the entire test run. This is a critical concept to understand when sharing resources.
+
+## Generating Rich Test Reports with Allure
+
+Allure is a powerful reporting framework that creates detailed, interactive test reports. It provides better visibility into test execution with features like step-by-step logs, test descriptions, and organized test hierarchies.
+
+### Installation
+
+**Install the Python package:**
+```bash
+pip install allure-pytest
+```
+
+**Install the Allure command-line tool:**
+```bash
+# macOS (using Homebrew)
+brew install allure
+
+# Windows (using Scoop)
+scoop install allure
+
+# Linux
+sudo apt-add-repository ppa:qameta/allure
+sudo apt-get update
+sudo apt-get install allure
+```
+
+### Basic Usage
+
+**Run tests and generate Allure results:**
+```bash
+pytest --alluredir=./allure-results
+```
+
+**Generate and view the HTML report:**
+```bash
+# Generate HTML report
+allure generate allure-results --clean
+
+# Open the report in browser
+allure open allure-report
+
+# Or serve the report directly
+allure serve allure-results
+```
+
+### Allure Decorators
+
+**Test-level decorators for better reporting:**
+
+```python
+import allure
+
+@allure.title("Test User Can Log In Successfully")
+@allure.description("This test verifies that a registered user can log in with valid credentials.")
+@allure.feature("Authentication")
+@allure.story("User Login")
+def test_login_with_valid_credentials():
+    # Test code here
+    pass
+```
+
+**Step-level decorators for detailed execution logs:**
+
+```python
+@allure.step("Entering username: {1}")
+def enter_username(self, username):
+    self.find_element(self.USERNAME_INPUT).send_keys(username)
+
+@allure.step("Clicking the login button")
+def click_login(self):
+    self.find_element(self.LOGIN_BUTTON).click()
+```
+
+### Report Features
+
+- **Test Hierarchy**: Organize tests by Features and Stories
+- **Step-by-Step Execution**: See exactly what happened during test execution
+- **Attachments**: Add screenshots, logs, or other files to test reports
+- **Environment Information**: Track test environment details
+- **Trends**: Compare test results over time
+
+### Advanced Usage
+
+**Add attachments to tests:**
+```python
+import allure
+
+def test_with_attachment():
+    # Test code here
+    
+    # Add screenshot or file to report
+    allure.attach.file('screenshot.png', 'Screenshot', allure.attachment_type.PNG)
+```
+
+**Add environment information:**
+```bash
+# Create environment.properties file
+echo "Browser=Chrome" > allure-results/environment.properties
+echo "Version=4.34.0" >> allure-results/environment.properties
 ```
 
 ## Test Categories

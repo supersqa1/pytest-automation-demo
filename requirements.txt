@@ -1,4 +1,6 @@
+allure-pytest==2.14.3
 selenium==4.34.0
 pytest==8.4.1
-python-dotenv==1.1.1
 pytest-html==4.1.1
+pytest-xdist==3.6.1
+python-dotenv==1.1.1

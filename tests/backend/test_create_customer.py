@@ -1,7 +1,11 @@
 import logging as logger
 import pytest
+import allure
 
 @pytest.mark.testID9
+@allure.title("API: Create New Customer with Valid Data")
+@allure.description("Verifies that a new customer can be created via a POST request to the /customers endpoint.")
+@allure.story("Customer Management")
 def test_verify_create_customer_api():
     logger.info(f"Testing customer creation API...")
 
