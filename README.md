@@ -20,6 +20,7 @@ This framework demonstrates:
 - [Mastering Fixtures for Setup and Teardown](#mastering-fixtures-for-setup-and-teardown)
 - [Data-Driven Testing with @parametrize](#data-driven-testing-with-parametrize)
 - [Speeding Up Test Runs with Parallel Execution](#speeding-up-test-runs-with-parallel-execution)
+- [Generating Rich Test Reports with Allure](#generating-rich-test-reports-with-allure)
 - [Test Categories](#test-categories)
 - [Configuration](#configuration)
 - [Test Reports](#test-reports)
@@ -492,6 +493,106 @@ pytest -n 2
 - **Test Independence:** Parallel execution only works correctly if your tests are completely independent and do not rely on the state or outcome of other tests.
 
 - **Fixture Scope:** A session-scoped fixture (`@pytest.fixture(scope="session")`) will be created once per worker process, not once for the entire test run. This is a critical concept to understand when sharing resources.
+
+## Generating Rich Test Reports with Allure
+
+Allure is a powerful reporting framework that creates detailed, interactive test reports. It provides better visibility into test execution with features like step-by-step logs, test descriptions, and organized test hierarchies.
+
+### Installation
+
+**Install the Python package:**
+```bash
+pip install allure-pytest
+```
+
+**Install the Allure command-line tool:**
+```bash
+# macOS (using Homebrew)
+brew install allure
+
+# Windows (using Scoop)
+scoop install allure
+
+# Linux
+sudo apt-add-repository ppa:qameta/allure
+sudo apt-get update
+sudo apt-get install allure
+```
+
+### Basic Usage
+
+**Run tests and generate Allure results:**
+```bash
+pytest --alluredir=./allure-results
+```
+
+**Generate and view the HTML report:**
+```bash
+# Generate HTML report
+allure generate allure-results --clean
+
+# Open the report in browser
+allure open allure-report
+
+# Or serve the report directly
+allure serve allure-results
+```
+
+### Allure Decorators
+
+**Test-level decorators for better reporting:**
+
+```python
+import allure
+
+@allure.title("Test User Can Log In Successfully")
+@allure.description("This test verifies that a registered user can log in with valid credentials.")
+@allure.feature("Authentication")
+@allure.story("User Login")
+def test_login_with_valid_credentials():
+    # Test code here
+    pass
+```
+
+**Step-level decorators for detailed execution logs:**
+
+```python
+@allure.step("Entering username: {1}")
+def enter_username(self, username):
+    self.find_element(self.USERNAME_INPUT).send_keys(username)
+
+@allure.step("Clicking the login button")
+def click_login(self):
+    self.find_element(self.LOGIN_BUTTON).click()
+```
+
+### Report Features
+
+- **Test Hierarchy**: Organize tests by Features and Stories
+- **Step-by-Step Execution**: See exactly what happened during test execution
+- **Attachments**: Add screenshots, logs, or other files to test reports
+- **Environment Information**: Track test environment details
+- **Trends**: Compare test results over time
+
+### Advanced Usage
+
+**Add attachments to tests:**
+```python
+import allure
+
+def test_with_attachment():
+    # Test code here
+    
+    # Add screenshot or file to report
+    allure.attach.file('screenshot.png', 'Screenshot', allure.attachment_type.PNG)
+```
+
+**Add environment information:**
+```bash
+# Create environment.properties file
+echo "Browser=Chrome" > allure-results/environment.properties
+echo "Version=4.34.0" >> allure-results/environment.properties
+```
 
 ## Test Categories
 
