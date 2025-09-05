@@ -8,6 +8,8 @@ pytestmark = [pytest.mark.home_page, pytest.mark.regression]
 @pytest.mark.tcid('HOME-1')
 @pytest.mark.smoke
 def test_home_page_title(browser, home_page):
+    print("\n")
+    print("Going to home page....")
     home_page.visit("http://demostore.supersqa.com")
     assert 'Demo eCom Store – Just another WordPress site' == browser.title
 
